@@ -59,12 +59,12 @@ class ConstrainedTaskRunner:
             LOG.info(f"Setting up data for {lang_pair}")
             try:
                 # Download training data
-                train_file = self.data_manager.download_training_data(lang_pair)
-                LOG.info(f"Training data: {train_file}")
+                train_files = self.data_manager.download_training_data([lang_pair])
+                LOG.info(f"Training data: {train_files}")
                 
                 # Download test data
-                test_file = self.data_manager.download_test_data(lang_pair)
-                LOG.info(f"Test data: {test_file}")
+                test_files = self.data_manager.download_test_data([lang_pair])
+                LOG.info(f"Test data: {test_files}")
                 
             except Exception as e:
                 LOG.error(f"Failed to setup data for {lang_pair}: {e}")

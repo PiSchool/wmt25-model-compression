@@ -50,9 +50,12 @@ CONSTRAINED_TASK = {
     
     # Evaluation metrics
     "metrics": {
-        "quality": ["chrf"],  # Simplified to avoid COMET issues
+        "quality": ["chrf", "comet"],
         "efficiency": ["model_size", "inference_speed", "memory_usage"],
     },
+    
+    # COMET configuration
+    "comet_model": "wmt22-comet-da",  # Default COMET model for quality assessment
     
     # Compression techniques to experiment with
     "compression_methods": [
