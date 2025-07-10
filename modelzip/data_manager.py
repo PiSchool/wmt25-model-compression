@@ -48,10 +48,17 @@ class DataManager:
             pair_dir = self.tests_dir / pair
             pair_dir.mkdir(exist_ok=True)
             
-            test_sources = CONSTRAINED_TASK["data_sources"][pair]["test"]
+            # Get test sources from configuration
+            data_source = CONSTRAINED_TASK["data_sources"][pair]
+            test_sources = data_source.get("test", {})
+            
+            if not test_sources:
+                LOG.warning(f"No test sets configured for {pair}")
+                continue
+            
             for test_name, get_cmd in test_sources.items():
-                src_file = pair_dir / f"{test_name}.{src}-{tgt}.{src}"
-                ref_file = pair_dir / f"{test_name}.{src}-{tgt}.{tgt}"
+                src_file = pair_dir / f"{test_name}.{pair}.{src}"
+                ref_file = pair_dir / f"{test_name}.{pair}.{tgt}"
                 
                 if self._files_exist_and_valid(src_file, ref_file):
                     LOG.info(f"Test files exist for {pair}:{test_name}")
@@ -81,68 +88,97 @@ class DataManager:
         return test_files
     
     def download_training_data(self, lang_pairs: Optional[List[str]] = None) -> Dict[str, Path]:
-        """Download training data using mtdata for specified language pairs"""
-        lang_pairs = lang_pairs or get_constrained_pairs()
+        """Download training data for specified language pairs using enhanced configuration
+        
+        Args:
+            lang_pairs: Language pairs to download data for
+            
+        Returns:
+            Dictionary mapping language pairs to training data files
+        """
+        if lang_pairs is None:
+            lang_pairs = get_constrained_pairs()
+        
         train_files = {}
         
         for pair in lang_pairs:
             if pair not in CONSTRAINED_TASK["data_sources"]:
-                LOG.warning(f"No training data source configured for {pair}")
+                LOG.warning(f"No data source configured for {pair}")
                 continue
-                
+            
             pair_dir = self.data_dir / "train" / pair
             pair_dir.mkdir(parents=True, exist_ok=True)
             
             train_file = pair_dir / f"train.{pair}.tsv"
-            if train_file.exists() and train_file.stat().st_size > 0:
-                LOG.info(f"Training data exists for {pair}: {train_file}")
+            if train_file.exists():
+                LOG.info(f"Training data exists: {train_file}")
                 train_files[pair] = train_file
                 continue
             
             try:
-                # Get the dataset name from config
-                dataset_name = CONSTRAINED_TASK["data_sources"][pair]["train"]
-                LOG.info(f"Downloading training data for {pair} using dataset: {dataset_name}")
+                # Get the training datasets (now supporting multiple sources)
+                train_sources = CONSTRAINED_TASK["data_sources"][pair]["train"]
+                if isinstance(train_sources, str):
+                    train_sources = [train_sources]  # Convert single source to list
                 
-                # Use mtdata to download specific dataset
+                LOG.info(f"Downloading training data for {pair} from {len(train_sources)} sources")
+                
+                combined_data = []
                 src, tgt = pair.split("-")
-                cmd = f"mtdata get -tr {dataset_name} -l {src}-{tgt} -o {pair_dir} --merge"
-                LOG.info(f"Running command: {cmd}")
-                sp.check_call(cmd, shell=True)
                 
-                # Find the downloaded files (mtdata creates separate src/tgt files)
-                src, tgt = pair.split("-")
-                src_file = pair_dir / f"train.{src}"
-                tgt_file = pair_dir / f"train.{tgt}"
+                for i, dataset_name in enumerate(train_sources):
+                    source_dir = pair_dir / f"source_{i}"
+                    source_dir.mkdir(exist_ok=True)
+                    
+                    try:
+                        # Use mtdata to download specific dataset
+                        cmd = f"mtdata get -tr {dataset_name} -l {src}-{tgt} -o {source_dir} --merge"
+                        LOG.info(f"Running command: {cmd}")
+                        sp.check_call(cmd, shell=True)
+                        
+                        # Find the downloaded files
+                        src_file = source_dir / f"train.{src}"
+                        tgt_file = source_dir / f"train.{tgt}"
+                        
+                        if src_file.exists() and tgt_file.exists():
+                            # Read and combine data
+                            with open(src_file, 'r', encoding='utf-8') as sf, \
+                                 open(tgt_file, 'r', encoding='utf-8') as tf:
+                                for src_line, tgt_line in zip(sf, tf):
+                                    src_line = src_line.strip()
+                                    tgt_line = tgt_line.strip()
+                                    if src_line and tgt_line:  # Skip empty lines
+                                        combined_data.append((src_line, tgt_line))
+                            
+                            LOG.info(f"Loaded {len(combined_data)} sentences from {dataset_name}")
+                        else:
+                            LOG.warning(f"Source or target files not found for {dataset_name}: {src_file}, {tgt_file}")
+                            
+                    except Exception as e:
+                        LOG.error(f"Failed to download {dataset_name} for {pair}: {e}")
+                        continue
                 
-                if src_file.exists() and tgt_file.exists():
-                    # Combine source and target files into TSV format
-                    LOG.info(f"Combining {src_file} and {tgt_file} into {train_file}")
-                    with open(src_file, 'r', encoding='utf-8') as sf, \
-                         open(tgt_file, 'r', encoding='utf-8') as tf, \
-                         open(train_file, 'w', encoding='utf-8') as outf:
-                        for src_line, tgt_line in zip(sf, tf):
-                            src_line = src_line.strip()
-                            tgt_line = tgt_line.strip()
-                            if src_line and tgt_line:  # Skip empty lines
-                                outf.write(f"{src_line}\t{tgt_line}\n")
+                if combined_data:
+                    # Write combined data to main training file
+                    with open(train_file, 'w', encoding='utf-8') as outf:
+                        for src_line, tgt_line in combined_data:
+                            outf.write(f"{src_line}\t{tgt_line}\n")
                     
                     train_files[pair] = train_file
-                    LOG.info(f"Created training data: {train_file}")
+                    LOG.info(f"Created combined training data: {train_file} with {len(combined_data)} sentences")
                 else:
-                    LOG.error(f"Source or target files not found: {src_file}, {tgt_file}")
+                    LOG.error(f"No training data could be downloaded for {pair}")
                     
             except Exception as e:
                 LOG.error(f"Failed to download training data for {pair}: {e}")
-                # Try alternative approach - download any available dataset for this language pair
+                # Try fallback to basic News Commentary
                 try:
-                    LOG.info(f"Trying alternative download for {pair}...")
+                    LOG.info(f"Trying fallback download for {pair}...")
                     src, tgt = pair.split("-")
                     cmd = f"mtdata get -l {src}-{tgt} -tr Statmt-news_commentary-17-{src}-{tgt} -o {pair_dir} --merge"
                     sp.check_call(cmd, shell=True)
                     
-                    # Check for downloaded files again (mtdata format)
-                    src, tgt = pair.split("-")
+                    # Check for downloaded files
                     src_file = pair_dir / f"train.{src}"
                     tgt_file = pair_dir / f"train.{tgt}"
                     
@@ -158,9 +194,9 @@ class DataManager:
                                     outf.write(f"{src_line}\t{tgt_line}\n")
                         
                         train_files[pair] = train_file
-                        LOG.info(f"Created training data (alternative): {train_file}")
+                        LOG.info(f"Created training data (fallback): {train_file}")
                 except Exception as e2:
-                    LOG.error(f"Alternative download also failed for {pair}: {e2}")
+                    LOG.error(f"Fallback download also failed for {pair}: {e2}")
                 
         return train_files
     
@@ -286,10 +322,14 @@ class DataManager:
                 # Look for test files with proper naming pattern
                 for test_file in pair_dir.glob(f"*.{pair}.{src}"):
                     test_name = test_file.name.split(".")[0]
-                    if test_file.exists():
-                        stats["test_data"][pair][test_name] = {
-                            "sentences": len(test_file.read_text().splitlines())
-                        }
+                    ref_file = pair_dir / f"{test_name}.{pair}.{tgt}"
+                    if test_file.exists() and ref_file.exists():
+                        try:
+                            stats["test_data"][pair][test_name] = {
+                                "sentences": len(test_file.read_text().splitlines())
+                            }
+                        except Exception as e:
+                            LOG.warning(f"Could not read test file {test_file}: {e}")
         
         # Training data statistics
         for pair in get_constrained_pairs():
