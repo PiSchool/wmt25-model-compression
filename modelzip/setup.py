@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # 2025-05-09: Initial version by TG Gowda
 #

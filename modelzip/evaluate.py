@@ -18,6 +18,8 @@ from modelzip.config import DEF_BATCH_SIZE, DEF_LANG_PAIRS, TASK_CONF, WORK_DIR
 def get_score(src_file: Path, out_file: Path, ref_file: Path, metric: str):
     if metric == "chrf":
         cmd = f"sacrebleu {ref_file} -i {out_file} -m {metric} -b -lc"
+    elif metric == "llm_judge":
+        cmd = f"python3 -m llm_judge.correctness {ref_file} {tgt_file} {src_lang} {out_file}"
     else:
         cmd = f"pymarian-eval -m {metric} -r {ref_file} -t {out_file} -s {src_file} -a only"
     LOG.info(f"Scoring: {cmd}")

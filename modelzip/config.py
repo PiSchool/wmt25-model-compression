@@ -17,7 +17,7 @@ TASK_CONF = {
         "eng-ara": {"wmt24pp": "mtdata echo Google-wmt24pp-1-eng-ara_SA | sed 's/\\r//g'"},
     },
     "models": ["CohereLabs/aya-expanse-8b"],
-    "metrics": ["chrf", "wmt22-comet-da"], # "wmt22-cometkiwi-da" is a gated model
+    "metrics": ["chrf", "wmt22-comet-da", 'llm_judge'], # "wmt22-cometkiwi-da" is a gated model
 }
 
 # Default language pairs
