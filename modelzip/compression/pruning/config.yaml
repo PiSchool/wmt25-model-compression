@@ -1,0 +1,36 @@
+# Default configuration for Layer Pruning Module
+# This file can be used to configure the layer pruning process
+
+# Model configuration
+model:
+  default_path: "CohereLabs/aya-expanse-8b"
+  output_suffix: "pruned"
+
+# Dataset configuration
+dataset:
+  default_name: "arcee-ai/sec-data-mini"
+  default_column: "text"
+  default_subset: "train"
+  default_size: 4000
+
+# Processing configuration
+processing:
+  batch_size: 8
+  max_length: 1024
+  layers_to_skip: 28
+
+# Merging configuration
+merging:
+  default_method: "slicing"
+  supported_methods: ["slicing", "weighted"]
+
+# Paths configuration
+paths:
+  pruneme_path: "../PruneMe"
+  temp_dir: null  # Auto-created if null
+
+# Output configuration
+output:
+  save_results: false
+  validate_model: false
+  verbose_logging: false 

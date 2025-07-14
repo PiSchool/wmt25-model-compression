@@ -1,10 +1,23 @@
 """
-Pruning Compression Techniques
+Layer Pruning Module for WMT25 Model Compression
 
-This module contains structured and unstructured pruning methods
-for model compression with various sparsity levels.
+This module provides layer-based pruning functionality using PruneMe's
+similarity analysis and mergekit's layer merging capabilities.
 """
 
-from .pruning_compressor import PruningCompressor
+from .layer_similarity_analyzer import LayerSimilarityAnalyzer
+from .layer_merger import LayerMerger
+from .layer_pruning_compressor import LayerPruningCompressor, PruningConfig, PruningResult
+from .config_loader import ConfigLoader, config_loader
 
-__all__ = ["PruningCompressor"] 
+__all__ = [
+    "LayerSimilarityAnalyzer",
+    "LayerMerger", 
+    "LayerPruningCompressor",
+    "PruningConfig",
+    "PruningResult",
+    "ConfigLoader",
+    "config_loader"
+]
+
+__version__ = "1.0.0" 
