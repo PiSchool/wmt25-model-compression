@@ -151,15 +151,16 @@ class TranslationEvaluator(BaseEvaluator):
                         # Generate translation
                         try:
                             inputs = model.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512)
+                            inputs = {k: v.to(model.model.device) for k, v in inputs.items()}
                             
-                            with model.model.eval():
-                                outputs = model.model.generate(
-                                    **inputs,
-                                    max_new_tokens=256,
-                                    do_sample=False,
-                                    num_beams=1,
-                                    pad_token_id=model.tokenizer.eos_token_id
-                                )
+                            model.model.eval()
+                            outputs = model.model.generate(
+                                **inputs,
+                                max_new_tokens=256,
+                                do_sample=False,
+                                num_beams=1,
+                                pad_token_id=model.tokenizer.eos_token_id
+                            )
                             
                             # Decode translation
                             generated_text = model.tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -325,15 +326,16 @@ class TranslationEvaluator(BaseEvaluator):
                         prompt = prompt_template.format(text=source_text)
                         
                         inputs = model.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=256)
+                        inputs = {k: v.to(model.model.device) for k, v in inputs.items()}
                         
-                        with model.model.eval():
-                            outputs = model.model.generate(
-                                **inputs,
-                                max_new_tokens=64,
-                                do_sample=False,
-                                num_beams=1,
-                                pad_token_id=model.tokenizer.eos_token_id
-                            )
+                        model.model.eval()
+                        outputs = model.model.generate(
+                            **inputs,
+                            max_new_tokens=64,
+                            do_sample=False,
+                            num_beams=1,
+                            pad_token_id=model.tokenizer.eos_token_id
+                        )
             
             end_time = time.time()
             avg_time_per_sample = (end_time - start_time) / min(5, len(sample_data)) * 1000  # Convert to ms
