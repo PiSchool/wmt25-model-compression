@@ -296,6 +296,7 @@ class ConstrainedTaskRunner:
             print(f"\nExperiment Results for {name}:")
             print(f"  Compression Ratio: {result.compression_ratio:.2f}x")
             print(f"  Model Size: {result.model_size_mb:.1f} MB")
+            print(f"  Model Parameters: {result.model_params:,}")
             print(f"  Inference Time: {result.inference_time_ms:.1f} ms")
             print(f"  Quality Score: {result.get_quality_score():.2f}")
         else:
@@ -325,6 +326,7 @@ class ConstrainedTaskRunner:
             print(f"{lang_pair:12} | {status} | "
                   f"Ratio: {result.compression_ratio:.2f}x | "
                   f"Size: {result.model_size_mb:.1f}MB | "
+                  f"Params: {result.model_params:,} | "
                   f"Quality: {result.get_quality_score():.2f}")
         
         if successful > 0:
@@ -375,6 +377,7 @@ class ConstrainedTaskRunner:
             print(f"✅ Test completed successfully!")
             print(f"  Compression Ratio: {result.compression_ratio:.2f}x")
             print(f"  Model Size: {result.model_size_mb:.1f} MB")
+            print(f"  Model Parameters: {result.model_params:,}")
             print(f"  Inference Time: {result.inference_time_ms:.1f} ms")
             print(f"  Quality Score: {result.get_quality_score():.2f}")
         else:

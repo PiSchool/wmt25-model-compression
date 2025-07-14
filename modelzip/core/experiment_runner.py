@@ -80,6 +80,7 @@ class ExperimentRunner:
             
             # Performance metrics
             model_size = compressed_model.get_model_size()
+            model_params = compressed_model.get_model_params()
             memory_usage = compressed_model.get_memory_usage()
             compression_ratio = compressor.get_compression_ratio(model, compressed_model)
             
@@ -95,6 +96,7 @@ class ExperimentRunner:
             results = ExperimentResults(
                 config=config,
                 model_size_mb=model_size,
+                model_params=model_params,
                 memory_usage_mb=memory_usage,
                 inference_time_ms=compression_time,  # Using compression time as placeholder
                 compression_ratio=compression_ratio,
@@ -114,6 +116,7 @@ class ExperimentRunner:
             failure_result = ExperimentResults(
                 config=config,
                 model_size_mb=0.0,
+                model_params=0,
                 memory_usage_mb=0.0,
                 inference_time_ms=0.0,
                 compression_ratio=0.0,

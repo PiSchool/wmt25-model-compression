@@ -73,6 +73,7 @@ class ExperimentResults:
     
     # Performance metrics
     model_size_mb: float
+    model_params: int
     memory_usage_mb: float
     inference_time_ms: float
     compression_ratio: float
@@ -93,6 +94,7 @@ class ExperimentResults:
         return {
             "config": self.config.to_dict(),
             "model_size_mb": self.model_size_mb,
+            "model_params": self.model_params,
             "memory_usage_mb": self.memory_usage_mb,
             "inference_time_ms": self.inference_time_ms,
             "compression_ratio": self.compression_ratio,

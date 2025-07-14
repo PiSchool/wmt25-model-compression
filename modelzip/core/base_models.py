@@ -117,4 +117,18 @@ class HuggingFaceModel(BaseModel):
                 return 0.0
         else:
             # For local paths, use file system size
-            return super().get_model_size() 
+            return super().get_model_size()
+    
+    def get_model_params(self) -> int:
+        """Get total number of parameters in the model
+        
+        Returns:
+            int: Total number of parameters
+        """
+        try:
+            model = self.model
+            total_params = sum(p.numel() for p in model.parameters())
+            return total_params
+        except Exception as e:
+            LOG.warning(f"Could not determine model parameters for {self.model_path}: {e}")
+            return 0 
