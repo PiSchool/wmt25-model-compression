@@ -17,7 +17,7 @@ dataset:
 processing:
   batch_size: 8
   max_length: 1024
-  layers_to_skip: 28
+  layers_to_skip: 1
 
 # Merging configuration
 merging:
@@ -27,7 +27,7 @@ merging:
 # Paths configuration
 paths:
   pruneme_path: "../PruneMe"
-  temp_dir: null  # Auto-created if null
+  temp_dir: "/results/temp_pruning"  # Use /results for temporary files
 
 # Output configuration
 output:

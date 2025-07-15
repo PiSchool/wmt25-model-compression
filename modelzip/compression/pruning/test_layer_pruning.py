@@ -68,7 +68,7 @@ def test_layer_merger():
         # Test create_merge_config
         config_content = merger.create_merge_config(
             model_path="test_model",
-            output_path="test_output",
+            output_path="workdir/results/test_output",
             start_layer=12,
             end_layer=15,
             merge_method="slicing"
@@ -99,13 +99,13 @@ def test_layer_pruning_compressor():
         # Test PruningConfig
         config = PruningConfig(
             model_path="test_model",
-            output_path="test_output",
+            output_path="workdir/results/test_output",
             dataset="test_dataset",
             batch_size=4
         )
         
         assert config.model_path == "test_model"
-        assert config.output_path == "test_output"
+        assert config.output_path == "workdir/results/test_output"
         assert config.dataset == "test_dataset"
         assert config.batch_size == 4
         print("✅ PruningConfig works correctly")
@@ -114,7 +114,7 @@ def test_layer_pruning_compressor():
         result = PruningResult(
             success=True,
             original_model_path="test_model",
-            pruned_model_path="test_output",
+            pruned_model_path="workdir/results/test_output",
             removed_layers=(12, 15),
             layer_distance=0.0234,
             model_size_reduction=12.5,
@@ -164,7 +164,7 @@ def test_mock_compression_workflow():
         
         # Mock merger results
         mock_merge_results = {
-            "merged_model_path": "test_output",
+            "merged_model_path": "workdir/results/test_output",
             "summary": "Slicing merge completed successfully"
         }
         mock_merger.merge_layers.return_value = (True, mock_merge_results)
@@ -177,7 +177,7 @@ def test_mock_compression_workflow():
         # Test compression
         config = PruningConfig(
             model_path="test_model",
-            output_path="test_output"
+            output_path="workdir/results/test_output"
         )
         
         with patch.object(compressor, '_calculate_size_reduction', return_value=12.5):

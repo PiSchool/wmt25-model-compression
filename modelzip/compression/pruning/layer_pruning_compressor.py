@@ -107,8 +107,8 @@ class LayerPruningCompressor:
         LOG.info(f"Starting layer pruning compression for model: {config.model_path}")
         
         # Create temporary directory if not specified
-        temp_dir = Path(config.temp_dir) if config.temp_dir else Path("temp_pruning")
-        temp_dir.mkdir(exist_ok=True)
+        temp_dir = Path(config.temp_dir) if config.temp_dir else Path("workdir/results/temp_pruning")
+        temp_dir.mkdir(parents=True, exist_ok=True)
         
         try:
             # Step 1: Analyze layer similarity
@@ -331,7 +331,7 @@ def main():
     # Example configuration
     config = PruningConfig(
         model_path="CohereLabs/aya-expanse-8b",
-        output_path="./pruned_aya8b",
+        output_path="workdir/results/pruned_aya8b",
         dataset="arcee-ai/sec-data-mini",
         dataset_size=1000,
         batch_size=4

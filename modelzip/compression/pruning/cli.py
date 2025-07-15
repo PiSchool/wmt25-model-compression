@@ -54,7 +54,7 @@ Examples:
     parser.add_argument(
         "--output", "-o",
         required=True,
-        help="Output path for the pruned model"
+        help="Output path for the pruned model (will be created under /results/)"
     )
     
     # Optional arguments
@@ -177,10 +177,11 @@ def main():
     if args.verbose:
         LOG.getLogger().setLevel(LOG.DEBUG)
     
-    # Create configuration
+    # Create configuration with standardized output path
+    output_path = Path("workdir/results") / args.output.lstrip("/").lstrip("./")
     config = PruningConfig(
         model_path=args.model,
-        output_path=args.output,
+        output_path=str(output_path),
         dataset=args.dataset,
         dataset_column=args.dataset_column,
         batch_size=args.batch_size,

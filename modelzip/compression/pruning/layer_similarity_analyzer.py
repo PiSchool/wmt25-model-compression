@@ -151,10 +151,11 @@ class LayerSimilarityAnalyzer:
         Returns:
             Dict: Processed results including layer distances and recommendations
         """
-        # Read the CSV file
+        # Read the CSV file from the PruneMe directory (current working directory)
         csv_file = Path("layer_distances.csv")
+        LOG.info(f"Looking for CSV file at: {csv_file.absolute()}")
         if not csv_file.exists():
-            raise FileNotFoundError(f"Layer distances CSV not found at: {csv_file}")
+            raise FileNotFoundError(f"Layer distances CSV not found at: {csv_file.absolute()}")
         
         df = pd.read_csv(csv_file)
         
@@ -185,11 +186,41 @@ class LayerSimilarityAnalyzer:
         
         # Save results to output directory if specified
         if output_dir:
-            # Copy the CSV file
             import shutil
             target_csv = output_dir / "layer_distances.csv"
-            shutil.copy2(csv_file, target_csv)
-            LOG.info(f"Layer distances saved to: {target_csv}")
+            target_csv.parent.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
+            
+            # Use relative path since we're in the PruneMe directory
+            source_csv = Path("layer_distances.csv")
+            if source_csv.exists():
+                try:
+                    # Use copyfile instead of copy2 for more reliable copying
+                    shutil.copyfile(source_csv, target_csv)
+                    LOG.info(f"Layer distances saved to: {target_csv}")
+                except Exception as e:
+                    LOG.error(f"Failed to copy CSV file: {e}")
+                    # Try with absolute path as fallback
+                    try:
+                        abs_source = Path("/workspace/PruneMe/compute_block_similarity/layer_distances.csv")
+                        if abs_source.exists():
+                            shutil.copyfile(abs_source, target_csv)
+                            LOG.info(f"Layer distances saved to: {target_csv} (using absolute path)")
+                        else:
+                            LOG.error(f"Absolute source path also not found: {abs_source}")
+                    except Exception as e2:
+                        LOG.error(f"Failed to copy CSV with absolute path: {e2}")
+            else:
+                LOG.warning(f"Source CSV not found at: {source_csv}")
+                # Try with absolute path as fallback
+                try:
+                    abs_source = Path("/workspace/PruneMe/compute_block_similarity/layer_distances.csv")
+                    if abs_source.exists():
+                        shutil.copyfile(abs_source, target_csv)
+                        LOG.info(f"Layer distances saved to: {target_csv} (using absolute path)")
+                    else:
+                        LOG.error(f"Absolute source path also not found: {abs_source}")
+                except Exception as e:
+                    LOG.error(f"Failed to copy CSV with absolute path: {e}")
             
             # Save processed results as JSON
             import json

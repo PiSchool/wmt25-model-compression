@@ -129,8 +129,8 @@ dtype: bfloat16
         output_path = Path(output_path)
         output_path.mkdir(parents=True, exist_ok=True)
         
-        # Use temp_dir if provided, otherwise create one
-        work_dir = temp_dir if temp_dir else Path("temp_merge")
+        # Use temp_dir if provided, otherwise create one in workdir/results
+        work_dir = temp_dir if temp_dir else Path("workdir/results/temp_merge")
         work_dir.mkdir(parents=True, exist_ok=True)
         
         # Create merge configuration
@@ -154,12 +154,11 @@ dtype: bfloat16
         success = self._run_merge_script(slice_dir, output_path)
         
         if success:
-            merged_model_path = output_path / "merged_model"
-            LOG.info(f"Layer merging completed successfully. Model saved to: {merged_model_path}")
+            LOG.info(f"Layer merging completed successfully. Model saved to: {output_path}")
             
             # Generate results dictionary
             results = {
-                "merged_model_path": str(merged_model_path),
+                "merged_model_path": str(output_path),
                 "summary": f"{merge_method.capitalize()} merge completed successfully",
                 "config_file": str(config_path),
                 "layers_removed": {
@@ -186,6 +185,8 @@ dtype: bfloat16
         """
         # Change to the slice_with_mergekit directory
         original_dir = os.getcwd()
+        import shutil
+        import subprocess
         
         try:
             os.chdir(slice_dir)
@@ -200,12 +201,24 @@ dtype: bfloat16
             # Copy merged model to output directory
             merged_model_path = Path("merged")
             if merged_model_path.exists():
-                import shutil
-                target_merged_path = output_path / "merged_model"
-                if target_merged_path.exists():
-                    shutil.rmtree(target_merged_path)
-                shutil.copytree(merged_model_path, target_merged_path)
-                LOG.info(f"Merged model copied to: {target_merged_path}")
+                # Copy directly to output_path, not to a subdirectory
+                try:
+                    if output_path.exists():
+                        shutil.rmtree(output_path)
+                    shutil.copytree(merged_model_path, output_path)
+                    LOG.info(f"Merged model copied to: {output_path}")
+                except Exception as e:
+                    LOG.error(f"Failed to copy merged model: {e}")
+                    # Try alternative copy method
+                    try:
+                        subprocess.run(["cp", "-r", str(merged_model_path), str(output_path)], check=True)
+                        LOG.info(f"Merged model copied to: {output_path} (using cp)")
+                    except Exception as e2:
+                        LOG.error(f"Failed to copy merged model with cp: {e2}")
+                        return False
+            else:
+                LOG.error(f"Merged model not found at: {merged_model_path}")
+                return False
             
             return True
             

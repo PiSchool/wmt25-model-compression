@@ -216,7 +216,12 @@ class ConfigLoader:
         Returns:
             Optional[str]: Temp directory path
         """
-        return self.get_paths_config().get("temp_dir")
+        temp_dir = self.get_paths_config().get("temp_dir")
+        if temp_dir is None or temp_dir == "/results/temp_pruning":
+            return "workdir/results/temp_pruning"
+        if temp_dir.startswith("/results/"):
+            return temp_dir.replace("/results/", "workdir/results/")
+        return temp_dir
     
     def should_save_results(self) -> bool:
         """Check if results should be saved
@@ -258,7 +263,7 @@ class ConfigLoader:
         """
         config = {
             "model_path": model_path or self.get_default_model_path(),
-            "output_path": output_path or f"./{self.get_model_config().get('output_suffix', 'pruned')}",
+            "output_path": output_path or f"workdir/results/{self.get_model_config().get('output_suffix', 'pruned')}",
             "dataset": kwargs.get("dataset", self.get_default_dataset()),
             "dataset_column": kwargs.get("dataset_column", self.get_default_dataset_column()),
             "batch_size": kwargs.get("batch_size", self.get_default_batch_size()),
